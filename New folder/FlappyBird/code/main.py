@@ -14,6 +14,16 @@ mode = 0
 
 scale_factor = 0
 
+#ตำแหน่งของไฟล์ที่ใช้ร่วมกับโค้ด
+
+backgroundAT = 'background.png'
+BD_Cartoon_ShoutAT = 'BD_Cartoon_Shout.ttf'
+arrowAT = 'arrow.png'
+musicAT = 'music.wav'
+
+Play_RectAT = "Play Rect.png"
+groundAT = 'ground.png'
+jumpAT = 'jump.wav'
 
 class Game:
 	global mode
@@ -34,7 +44,7 @@ class Game:
 		self.collision_sprites = pygame.sprite.Group()
 
 		# scale factor
-		bg_height = pygame.image.load('background.png').get_height()
+		bg_height = pygame.image.load(backgroundAT).get_height()
 		self.scale_factor = WINDOW_HEIGHT / bg_height
 		global scale_factor
 		scale_factor = self.scale_factor
@@ -47,20 +57,21 @@ class Game:
 		self.obstacle_timer = pygame.USEREVENT + 1
 
 		# text
-		self.font = pygame.font.Font('BD_Cartoon_Shout.ttf',30)
+		self.font = pygame.font.Font(BD_Cartoon_ShoutAT,30)
 		self.score = 0
 		self.start_offset = 0
 
 		# menu
-		self.arrow_surf = pygame.image.load('arrow.png').convert_alpha()
+		self.arrow_surf = pygame.image.load(arrowAT).convert_alpha()
 		self.menu_surf = Game.get_font(35).render("Tap to Start", True, "#ffffff")
 		self.menu_rect = self.menu_surf.get_rect(center = (WINDOW_WIDTH / 2,(WINDOW_HEIGHT / 2) + (WINDOW_HEIGHT * 0.33)))
 
 		# music 
-		self.music = pygame.mixer.Sound('music.wav')
+		self.music = pygame.mixer.Sound(musicAT)
 		self.music.play(loops = -1)
 
 	def collisions(self):
+	#เมื่อเกิดการชน
 		if pygame.sprite.spritecollide(self.plane,self.collision_sprites,False,pygame.sprite.collide_mask)\
 		or self.plane.rect.top <= 0:
 			for sprite in self.collision_sprites.sprites():
@@ -75,7 +86,7 @@ class Game:
 			Pstatus = 0
 
 	def display_score(self):
-
+	#การนับคะแนน
 		if self.active and self.status == 1:
 			self.score = (pygame.time.get_ticks() - self.start_offset) // 1000
 			y = WINDOW_HEIGHT / 10
@@ -84,20 +95,29 @@ class Game:
 			# Maxscore
 			maxscore = self.score
 
-			i = 1
-
-			file = open('maxScore.txt', 'w+')
+			#อ่านไฟล์คะแนนที่มากที่สุด และแสดงในระหว่างเล่น
+			fileR = open('maxScore.txt', 'r')
 			
 			if(self.score >= 1):
-				#for i in file:
-					if(maxscore > int(i)):
-						file.write(str(maxscore))
+				a = fileR.readlines()
+				for i in range(len(a)):
+					a[i] = a[i].strip()
+					if(maxscore > int(a[i])):
+						fileW = open('maxScore.txt', 'w')
+						fileW.write(str(maxscore) + '\n')
 					else:
-						maxscore = int(i)
+						maxscore = int(a[i])
 
-			file.close()
+			
 		else:
-			maxscore = self.score
+			#อ่านไฟล์คะแนนที่มากที่สุด และแสดงเมื่อนกเกิดการชน และเมื่อเริ่มเกม
+			
+			fileR = open('maxScore.txt', 'r')
+
+			a = fileR.readlines()
+			for i in range(len(a)):
+				a[i] = a[i].strip()
+				maxscore = a[i]
 			y = WINDOW_HEIGHT / 10
 			x = WINDOW_WIDTH / 2
 			score_surf = self.font.render("Your score   " + str(self.score),True,"#b68f40")
@@ -110,7 +130,7 @@ class Game:
 
 
 	def get_font(size): # Returns Press-Start-2P in the desired size
-		return pygame.font.Font("BD_Cartoon_Shout.ttf", size)
+		return pygame.font.Font(BD_Cartoon_ShoutAT, size)
 
 	def run(self):
 	
@@ -156,14 +176,17 @@ class Game:
                     #        text_input="SELECT MODE?", font = Game.get_font(30), base_color="#d7fcd4", hovering_color="White")
 					
 			elif(self.status == 2):
+				#หน้าจอแสดงผลเมื่อนกเกิดการชน
 				self.display_surface.fill('black')
 				self.all_sprites.update(dt)
 				self.all_sprites.draw(self.display_surface)
 				self.display_score()
 
 				if self.active: 
+					#เซ็ตในการชน active
 					self.collisions()
 				else:
+					#แสดงข้อความคำว่า MENU
 					self.display_surface.blit(self.menu_surf,self.menu_rect)
 					for event in pygame.event.get():
 						if event.type == pygame.QUIT:
@@ -183,6 +206,7 @@ class Game:
 
 
 			elif(self.status == 0 or mode == 0):
+				#การแสดงผลในหน้าจอเลือกระดับความยาก
 				for event in pygame.event.get():
 					if event.type == pygame.QUIT:
 						pygame.quit()
@@ -193,19 +217,20 @@ class Game:
 				self.display_surface.blit(MENU_TEXT, MENU_RECT)
 				MENU_MOUSE_POS = pygame.mouse.get_pos()
 
-				EASY_BUTTON = Button(image=pygame.image.load("Play Rect.png").convert(), pos=(WINDOW_WIDTH / 2, 430), 
+				EASY_BUTTON = Button(image=pygame.image.load(Play_RectAT).convert(), pos=(WINDOW_WIDTH / 2, 430), 
                             text_input="EASY", font = Game.get_font(50), base_color="#d7fcd4", hovering_color="White")
 				
-				NORM_BUTTON = Button(image=pygame.image.load("Play Rect.png").convert(), pos=(WINDOW_WIDTH / 2, 550), 
+				NORM_BUTTON = Button(image=pygame.image.load(Play_RectAT).convert(), pos=(WINDOW_WIDTH / 2, 550), 
                             text_input="NORMAL", font = Game.get_font(50), base_color="#d7fcd4", hovering_color="White")
 				
-				CHAL_BUTTON = Button(image=pygame.image.load("Play Rect.png").convert(), pos=(WINDOW_WIDTH / 2, 670), 
+				CHAL_BUTTON = Button(image=pygame.image.load(Play_RectAT).convert(), pos=(WINDOW_WIDTH / 2, 670), 
                             text_input="CHALLENGE", font = Game.get_font(50), base_color="#d7fcd4", hovering_color="White")
 				
 				EASY_BUTTON.update(self.display_surface)
 				NORM_BUTTON.update(self.display_surface)
 				CHAL_BUTTON.update(self.display_surface)
 
+				#คำสั่งสร้างปุ่มเลือกระดับความยาก
 				if(self.selM == 0):
 					EASY_BUTTON.changeColor((EASY_BUTTON.x_pos, EASY_BUTTON.y_pos))
 					EASY_BUTTON.update(self.display_surface)
@@ -245,7 +270,7 @@ class Game:
 							mode = 3
 						
 							
-
+				#การเซ็ตค่าระดับความเร็วของอุปสรรคและระดับแรงโน้มถ่วง
 				if(mode == 1):
 					global gravity
 					gravity = 175
@@ -298,7 +323,7 @@ class Game:
 					
 
 			
-			print(mode)
+			
 
 			pygame.display.update()
 			# self.clock.tick(FRAMERATE)
@@ -307,7 +332,7 @@ class BG(pygame.sprite.Sprite):
 
 	def __init__(self,groups,scale_factor):
 		super().__init__(groups)
-		bg_image = pygame.image.load('background.png').convert()
+		bg_image = pygame.image.load(backgroundAT).convert()
 
 		full_height = bg_image.get_height() * scale_factor
 		full_width = bg_image.get_width() * scale_factor
@@ -333,7 +358,7 @@ class Ground(pygame.sprite.Sprite):
 		self.sprite_type = 'ground'
 		
 		# image
-		ground_surf = pygame.image.load('ground.png').convert()
+		ground_surf = pygame.image.load(groundAT).convert()
 		self.image = pygame.transform.scale(ground_surf,pygame.math.Vector2(ground_surf.get_size()) * scale_factor)
 
 		full_height = ground_surf.get_height()
@@ -380,7 +405,7 @@ class Plane(pygame.sprite.Sprite):
 		self.mask = pygame.mask.from_surface(self.image)
 
 		# sound
-		self.jump_sound = pygame.mixer.Sound('jump.wav')
+		self.jump_sound = pygame.mixer.Sound(jumpAT)
 		self.jump_sound.set_volume(0.3)
 
 	def import_frames(self,scale_factor):
