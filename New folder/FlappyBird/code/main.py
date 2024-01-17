@@ -5,7 +5,7 @@ from random import choice, randint
 
 BGspeed = 300
 Gspeed = 360
-PlaneUpspeed = 400
+PlaneUpspeed = 400 
 gravity = 600
 obsSizeSC = 1
 obsSpawnT = 1400
@@ -80,7 +80,7 @@ class Game:
 			self.plane.kill()
 			global mode
 			global Pstatus
-			mode = 0
+			#mode = 0 ไม่ต้องเซ็ทก็ได้?
 			self.status = 2
 			self.active = False
 			Pstatus = 0
@@ -96,14 +96,24 @@ class Game:
 			maxscore = self.score
 
 			#อ่านไฟล์คะแนนที่มากที่สุด และแสดงในระหว่างเล่น
-			fileR = open('maxScore.txt', 'r')
+			if(mode == 1):
+				fileR = open('EMmaxScore.txt', 'r')
+			elif(mode == 2):
+				fileR = open('MMmaxScore.txt', 'r')
+			else:
+				fileR = open('CMmaxScore.txt', 'r')
 			
 			if(self.score >= 1):
 				a = fileR.readlines()
 				for i in range(len(a)):
 					a[i] = a[i].strip()
 					if(maxscore > int(a[i])):
-						fileW = open('maxScore.txt', 'w')
+						if(mode == 1):
+							fileW = open('EMmaxScore.txt', 'w')
+						elif(mode == 2):
+							fileW = open('MMmaxScore.txt', 'w')
+						else:
+							fileW = open('CMmaxScore.txt', 'w')
 						fileW.write(str(maxscore) + '\n')
 					else:
 						maxscore = int(a[i])
@@ -112,7 +122,15 @@ class Game:
 		else:
 			#อ่านไฟล์คะแนนที่มากที่สุด และแสดงเมื่อนกเกิดการชน และเมื่อเริ่มเกม
 			
-			fileR = open('maxScore.txt', 'r')
+			if(mode == 1):
+				fileR = open('EMmaxScore.txt', 'r')
+				msg = "Easy mode max score  "
+			elif(mode == 2):
+				fileR = open('MMmaxScore.txt', 'r')
+				msg = "Normal mode max score  "
+			else:
+				fileR = open('CMmaxScore.txt', 'r')
+				msg = "Challenge mode max score  "
 
 			a = fileR.readlines()
 			for i in range(len(a)):
@@ -120,9 +138,9 @@ class Game:
 				maxscore = a[i]
 			y = WINDOW_HEIGHT / 10
 			x = WINDOW_WIDTH / 2
-			score_surf = self.font.render("Your score   " + str(self.score),True,"#b68f40")
+			score_surf = self.font.render("Your last game score   " + str(self.score),True,"#b68f40")
 			score_rect = score_surf.get_rect(midtop = (x,y))
-			maxscore_surf = self.font.render("Max score   " + str(maxscore),True,"#008000")
+			maxscore_surf = self.font.render(msg + str(maxscore),True,"#008000")
 			maxscore_rect = maxscore_surf.get_rect(midtop = (x,y + 50))
 			self.display_surface.blit(maxscore_surf,maxscore_rect)
 
