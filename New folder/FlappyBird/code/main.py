@@ -2,6 +2,9 @@ import pygame, sys, time
 from settings import *
 from button import Button
 from random import choice, randint
+import cv2
+import cv2.aruco as aruco
+import numpy as np
 
 BGspeed = 300
 Gspeed = 360
@@ -14,16 +17,23 @@ mode = 0
 
 scale_factor = 0
 
+dictionary = aruco.getPredefinedDictionary(aruco.DICT_4X4_250)
+parameters = aruco.DetectorParameters()
+cap = cv2.VideoCapture(0)
+cap.set(3, 1280)
+cap.set(4, 720)
+detector = cv2.aruco.ArucoDetector(dictionary, parameters)
+
 #ตำแหน่งของไฟล์ที่ใช้ร่วมกับโค้ด
 
-backgroundAT = 'background.png'
-BD_Cartoon_ShoutAT = 'BD_Cartoon_Shout.ttf'
-arrowAT = 'arrow.png'
-musicAT = 'music.wav'
+backgroundAT = '/Users/ant/very new junk program/I_new_Gen/Mypygame/New folder/background.png'
+BD_Cartoon_ShoutAT = '/Users/ant/very new junk program/I_new_Gen/Mypygame/New folder/BD_Cartoon_Shout.ttf'
+arrowAT = '/Users/ant/very new junk program/I_new_Gen/Mypygame/New folder/arrow.png'
+musicAT = '/Users/ant/very new junk program/I_new_Gen/Mypygame/New folder/music.wav'
 
-Play_RectAT = "Play Rect.png"
-groundAT = 'ground.png'
-jumpAT = 'jump.wav'
+Play_RectAT = "/Users/ant/very new junk program/I_new_Gen/Mypygame/New folder/Play Rect.png"
+groundAT = '/Users/ant/very new junk program/I_new_Gen/Mypygame/New folder/ground.png'
+jumpAT = '/Users/ant/very new junk program/I_new_Gen/Mypygame/New folder/jump.wav'
 
 class Game:
 	global mode
@@ -38,6 +48,7 @@ class Game:
 		self.status = 0
 		self.var = 0
 		self.selM = 0
+		self.ResetJump = True
 
 		# sprite groups
 		self.all_sprites = pygame.sprite.Group()
@@ -97,11 +108,11 @@ class Game:
 
 			#อ่านไฟล์คะแนนที่มากที่สุด และแสดงในระหว่างเล่น
 			if(mode == 1):
-				fileR = open('EMmaxScore.txt', 'r')
+				fileR = open('/Users/ant/very new junk program/I_new_Gen/Mypygame/New folder/EMmaxScore.txt', 'r')
 			elif(mode == 2):
-				fileR = open('MMmaxScore.txt', 'r')
+				fileR = open('/Users/ant/very new junk program/I_new_Gen/Mypygame/New folder/MMmaxScore.txt', 'r')
 			else:
-				fileR = open('CMmaxScore.txt', 'r')
+				fileR = open('/Users/ant/very new junk program/I_new_Gen/Mypygame/New folder/CMmaxScore.txt', 'r')
 			
 			if(self.score >= 1):
 				a = fileR.readlines()
@@ -123,13 +134,13 @@ class Game:
 			#อ่านไฟล์คะแนนที่มากที่สุด และแสดงเมื่อนกเกิดการชน และเมื่อเริ่มเกม
 			
 			if(mode == 1):
-				fileR = open('EMmaxScore.txt', 'r')
+				fileR = open('/Users/ant/very new junk program/I_new_Gen/Mypygame/New folder/EMmaxScore.txt', 'r')
 				msg = "Easy mode max score  "
 			elif(mode == 2):
-				fileR = open('MMmaxScore.txt', 'r')
+				fileR = open('/Users/ant/very new junk program/I_new_Gen/Mypygame/New folder/MMmaxScore.txt', 'r')
 				msg = "Normal mode max score  "
 			else:
-				fileR = open('CMmaxScore.txt', 'r')
+				fileR = open('/Users/ant/very new junk program/I_new_Gen/Mypygame/New folder/CMmaxScore.txt', 'r')
 				msg = "Challenge mode max score  "
 
 			a = fileR.readlines()
@@ -151,13 +162,32 @@ class Game:
 		return pygame.font.Font(BD_Cartoon_ShoutAT, size)
 
 	def run(self):
-	
+		player_x = 0
 		last_time = time.time()
 		while True:
-			
+			ret, frame = cap.read()
+			image = frame
+			gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+			detector = cv2.aruco.ArucoDetector(dictionary, parameters)
+			_, thresholded = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY)
+			corners, ids, rejectedImgPoints = detector.detectMarkers(thresholded)
 			# delta time
 			dt = time.time() - last_time
 			last_time = time.time()
+			if ids is not None:
+       		 # Loop through each detected marker
+				for i in range(len(ids)):
+            		# Extract the corners of the marker
+					marker_corners = corners[i][0].astype(np.int32)
+            		# Reshape the marker corners to match the expected format
+					marker_corners = marker_corners.reshape((-1, 1, 2)).astype(np.int32)
+					cv2.polylines(frame, [marker_corners] , True, (0, 255, 0), thickness = 2)
+					player_x = (abs(marker_corners[0][0][0]))
+				cv2.putText(frame, str(marker_corners[0][0][0]), (20, 50), cv2.FONT_HERSHEY_PLAIN, 3, (255, 0, 0), 3)
+			
+			# cv2.imshow('MediaPipe Pose', frame)    
+			if cv2.waitKey(10) & 0xFF == ord('q'):
+				break
 
 			if(self.status == 1):
 				
@@ -166,13 +196,16 @@ class Game:
 					if event.type == pygame.QUIT:
 						pygame.quit()
 						sys.exit()
-					if event.type == pygame.MOUSEBUTTONDOWN:
-						if self.active:
+					if player_x >= 800:
+						if self.active and self.ResetJump == True:
 							self.plane.jump()
-						else:
+							self.ResetJump = False
+						elif (not self.active) and self.ResetJump == True:
 							self.plane = Plane(self.all_sprites,self.scale_factor / 1.7)
 							self.active = True
 							self.start_offset = pygame.time.get_ticks()
+					elif player_x <= 400:
+						self.ResetJump = True
 
 					if event.type == self.obstacle_timer and self.active:
 						Obstacle([self.all_sprites,self.collision_sprites],self.scale_factor * 1.1)
@@ -429,7 +462,7 @@ class Plane(pygame.sprite.Sprite):
 	def import_frames(self,scale_factor):
 		self.frames = []
 		for i in range(3):
-			surf = pygame.image.load(f'red{i}.png').convert_alpha()
+			surf = pygame.image.load(f'/Users/ant/very new junk program/I_new_Gen/Mypygame/New folder/red{i}.png').convert_alpha()
 			scaled_surface = pygame.transform.scale(surf,pygame.math.Vector2(surf.get_size())* scale_factor * BirdSizeSC)
 			self.frames.append(scaled_surface)
 
@@ -464,7 +497,7 @@ class Obstacle(pygame.sprite.Sprite):
 		self.sprite_type = 'obstacle'
 
 		orientation = choice(('up','down'))
-		surf = pygame.image.load(f'{choice((0,1))}.png').convert_alpha()
+		surf = pygame.image.load(f'/Users/ant/very new junk program/I_new_Gen/Mypygame/New folder/{choice((0,1))}.png').convert_alpha()
 		self.image = pygame.transform.scale(surf,pygame.math.Vector2(surf.get_size()) * scale_factor * obsSizeSC)
 		
 		x = WINDOW_WIDTH + randint(40,100)
